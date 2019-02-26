@@ -145,6 +145,21 @@ def pytest_benchmark_compare_machine_info(config, benchmarksession, machine_info
     pass
 
 
+def pytest_benchmark_fixture_post_run(config, fixture, f):
+    """
+    Called on each fixture post-run, may be used to add custom profiling passes.
+
+    .. sourcecode:: python
+
+        def pytest_benchmark_fixture_post_run(config, fixture, f):
+            with torch.cuda.profiler import profile
+
+            with profile():
+                f()
+    """
+    pass
+
+
 pytest_benchmark_scale_unit.firstresult = True
 pytest_benchmark_generate_commit_info.firstresult = True
 pytest_benchmark_generate_json.firstresult = True

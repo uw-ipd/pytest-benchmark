@@ -33,7 +33,7 @@ class BenchmarkFixture(object):
     _precisions = {}
 
     def __init__(self, node, disable_gc, timer, min_rounds, min_time, max_time, warmup, warmup_iterations,
-                 calibration_precision, add_stats, logger, warner, disabled, cprofile, group=None):
+                 calibration_precision, add_stats, logger, warner, disabled, cprofile, group=None, post_run_hooks=None):
         self.name = node.name
         self.fullname = node._nodeid
         self.disabled = disabled
@@ -44,6 +44,7 @@ class BenchmarkFixture(object):
             self.param = None
             self.params = None
         self.group = group
+        self.post_run_hooks = post_run_hooks if not callable(post_run_hooks) else [post_run_hooks]
         self.has_error = False
         self.extra_info = {}
         self.skipped = False
@@ -164,6 +165,11 @@ class BenchmarkFixture(object):
             for _ in XRANGE(rounds):
                 stats.update(runner(loops_range))
             self._logger.debug("  Ran for %ss." % format_time(time.time() - run_start), yellow=True, bold=True)
+
+        if self.post_run_hooks:
+            for post_run_hook in self.post_run_hooks:
+                post_run_hook(self, lambda: function_to_benchmark(*args, **kwargs))
+
         if self.cprofile:
             profile = cProfile.Profile()
             function_result = profile.runcall(function_to_benchmark, *args, **kwargs)
@@ -224,6 +230,10 @@ class BenchmarkFixture(object):
         if loops_range:
             args, kwargs = make_arguments()
             result = target(*args, **kwargs)
+
+        if self.post_run_hooks:
+            for post_run_hook in self.post_run_hooks:
+                post_run_hook(self, lambda: target(*args, **kwargs))
 
         if self.cprofile:
             profile = cProfile.Profile()
